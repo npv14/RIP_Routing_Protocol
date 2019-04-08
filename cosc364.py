@@ -20,10 +20,28 @@ def open_file(fileName):
             l = i.strip()
             outputs = l.split(' ')
             outputs = [i.strip(',') for i in outputs[1:]]
-    print(routerId)        
-    print(outputs) 
-    print(inputPort)
+    a,r = check_inputPort(inputPort)
+    print(a)        
+    print(r) 
+    # print(inputPort)
+    return (routerId,inputPort,outputs)
 
+def check_inputPort(inputPort):
+    acceptedPort = []
+    rejectedPort = []
+    inputPort = set(inputPort)
+    print(inputPort)
+    for i in inputPort:
+        try:
+            i = int(i)
+            if i > 1024 and i < 64000:
+                acceptedPort.append(i)
+            else:
+                rejectedPort.append(i)
+        except:
+            print("port number is a string")
+            rejectedPort.append(i)
+    return(acceptedPort,rejectedPort)
 
 def main():
     try:
