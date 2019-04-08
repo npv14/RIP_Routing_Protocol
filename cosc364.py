@@ -11,6 +11,7 @@ def open_file(fileName):
         if "router-id" in i:
             routerId = i.split(' ')
             routerId = routerId[1]                              #Since router is always unique and only one
+            routerId = check_router_id(routerId)
         if "input-port" in i:
             k = i.strip()
             inputPort = k.split(' ')
@@ -20,11 +21,17 @@ def open_file(fileName):
             l = i.strip()
             outputs = l.split(' ')
             outputs = [i.strip(',') for i in outputs[1:]]
-    a,r = check_inputPort(inputPort)
+    a,r = check_inputPort(inputPort)                   
+    #Continue here##############################################################################
+    print(routerId)
     print(a)        
-    print(r) 
-    # print(inputPort)
+    print(r)
     return (routerId,inputPort,outputs)
+def check_router_id(routerId):
+    if int(routerId) >= 1 and int(routerId) <= 64000:
+        return int(routerId)
+    else:
+        return "Invalid router Id"
 
 def check_inputPort(inputPort):
     acceptedPort = []
@@ -34,7 +41,7 @@ def check_inputPort(inputPort):
     for i in inputPort:
         try:
             i = int(i)
-            if i > 1024 and i < 64000:
+            if i >= 1024 and i <= 64000:
                 acceptedPort.append(i)
             else:
                 rejectedPort.append(i)
