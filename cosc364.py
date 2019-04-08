@@ -29,10 +29,12 @@ def open_file(fileName):
     if (flag1 and flag2 and flag3 is False):
         print("Error in config file")
         return
-    acceptedPort,rejectedPort = check_inputPort(inputPort)                      
+    acceptedPort,rejectedPort = check_inputPort(inputPort)
+    outputs = check_outputs(outputs,acceptedPort)                    
     print(routerId)
     print(acceptedPort)        
     print(rejectedPort)
+    print(outputs)
     return (routerId,inputPort,outputs)
 
 def check_router_id(routerId):
@@ -58,6 +60,20 @@ def check_inputPort(inputPort):
             print("port number is a string")
             rejectedPort.append(i)
     return(acceptedPort,rejectedPort)
+
+def check_outputs(outputs,acceptedPort):
+    "Sanity check for the output"
+    outputPort = []
+    for i in outputs:
+        i = i.split('-')
+        if int(i[0]) < 1024 and int(i[0]) > 64000:
+            return "Invalid port range"
+        if int(i[0]) in acceptedPort:
+            print("Port same as input port")
+            return "Port same as input port"
+        list = [int(i[0]),int(i[1]),int(i[2])]
+        outputPort.append(list)
+    return outputPort
 
 def main():
     try:
