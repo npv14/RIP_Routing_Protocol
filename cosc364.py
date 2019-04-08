@@ -5,6 +5,9 @@ import select
 
 def open_file(fileName):
     "Open the filename"
+    flag1 = False
+    flag2 = False
+    flag3 = False
     f = open(fileName)
     infile = f.readlines()
     for i in infile:
@@ -12,21 +15,29 @@ def open_file(fileName):
             routerId = i.split(' ')
             routerId = routerId[1]                              #Since router is always unique and only one
             routerId = check_router_id(routerId)
+            flag1 = True
         if "input-port" in i:
             k = i.strip()
             inputPort = k.split(' ')
             inputPort = [i.strip(',') for i in inputPort[1:]]
+            flag2 = True
             
         if "outputs" in i:
             l = i.strip()
             outputs = l.split(' ')
             outputs = [i.strip(',') for i in outputs[1:]]
-    a,r = check_inputPort(inputPort)                   
-    #Continue here##############################################################################
+            flag3 = True
+
+    if (flag1 and flag2 and flag3 is False):
+        print("Error in config file")
+        return
+
+    acceptedPort,rejectedPort = check_inputPort(inputPort)                   
     print(routerId)
-    print(a)        
-    print(r)
+    print(acceptedPort)        
+    print(rejectedPort)
     return (routerId,inputPort,outputs)
+
 def check_router_id(routerId):
     if int(routerId) >= 1 and int(routerId) <= 64000:
         return int(routerId)
