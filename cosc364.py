@@ -2,9 +2,13 @@ import time
 import socket
 import sys
 import select
+import random
+
+HOST = '127.0.0.1'
 
 def open_file(fileName):
     "Open the filename"
+    table = {}
     flag1 = False
     flag2 = False
     flag3 = False
@@ -31,11 +35,11 @@ def open_file(fileName):
         return
     acceptedPort,rejectedPort = check_inputPort(inputPort)
     outputs = check_outputs(outputs,acceptedPort)                    
-    print(routerId)
-    print(acceptedPort)        
-    print(rejectedPort)
-    print(outputs)
-    return (routerId,inputPort,outputs)
+    # print(routerId)
+    # print(acceptedPort)        
+    # print(outputs)
+    print("List of rejected ports : {}".format(rejectedPort))
+    return (routerId,acceptedPort,outputs)
 
 def check_router_id(routerId):
     "Sanity check for the router ID"
@@ -63,7 +67,7 @@ def check_inputPort(inputPort):
 
 def check_outputs(outputs,acceptedPort):
     "Sanity check for the output"
-    outputPort = []
+    table = {}
     for i in outputs:
         i = i.split('-')
         if int(i[0]) < 1024 and int(i[0]) > 64000:
@@ -72,15 +76,50 @@ def check_outputs(outputs,acceptedPort):
             print("Port same as input port")
             return "Port same as input port"
         list = [int(i[0]),int(i[1]),int(i[2])]
-        outputPort.append(list)
-    return outputPort
+        table[int(i[2])] = [int(i[0]),int(i[1])]
+    return table
+
+def create_socket(acceptedPort):
+    "Creates the socket"
+    sockets = []
+    try: 
+        for i in acceptedPort:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sockets.append(s)
+            s.bind(("0.0.0.0", i))
+
+        return sockets
+    except socket.error as err: 
+            print("socket creation failed with error %s" %(err))
+# def send(data, port=50000, addr='239.192.1.100'):
+#     """send(data[, port[, addr]]) - multicasts a UDP datagram."""
+#     # Create the socket
+#     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#     # Make the socket multicast-aware, and set TTL.
+#     s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 20) # Change TTL (=20) to suit
+#     # Send the data
+#     s.sendto(data, (addr, port))
 
 def main():
+    
     try:
         fileName = sys.argv[1]
     except:
         print("ERROR: 404")
-    openedFile = open_file(fileName)
+    routerId,acceptedPort,outputs = open_file(fileName)
+    createdsocket = create_socket(acceptedPort)
+    print(createdsocket)
+    counter = 1
+    # while True:
+    #     print("Loop " + str(counter))
+    #     maxtime = 10 + random.randint(-3,3)
+    #     timeout = maxtime
+    #     track = time.time()
+    #     elapsed = track - time.time()
+    #     timer_incr = 0
+    #     print(maxtime)
+    #     print(elapsed)
+        
 
 if __name__ == "__main__":
     main()  
