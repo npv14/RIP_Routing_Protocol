@@ -91,6 +91,9 @@ def create_socket(acceptedPort):
         return sockets
     except socket.error as err: 
             print("socket creation failed with error %s" %(err))
+
+# def receive():
+
 # def send(data, port=50000, addr='239.192.1.100'):
 #     """send(data[, port[, addr]]) - multicasts a UDP datagram."""
 #     # Create the socket
@@ -99,26 +102,33 @@ def create_socket(acceptedPort):
 #     s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 20) # Change TTL (=20) to suit
 #     # Send the data
 #     s.sendto(data, (addr, port))
-
 def main():
     
     try:
         fileName = sys.argv[1]
     except:
         print("ERROR: 404")
+    then = time.time()
     routerId,acceptedPort,outputs = open_file(fileName)
     createdsocket = create_socket(acceptedPort)
-    print(createdsocket)
     counter = 1
-    # while True:
-    #     print("Loop " + str(counter))
-    #     maxtime = 10 + random.randint(-3,3)
-    #     timeout = maxtime
-    #     track = time.time()
-    #     elapsed = track - time.time()
-    #     timer_incr = 0
-    #     print(maxtime)
-    #     print(elapsed)
+    while True:
+        now = time.time() #Time after it finished
+        if now-then > 30:
+            #Some code for updating
+            print("It took: ", now-then, " seconds")
+            then = now
+            continue
+        
+        
+        # print("Loop " + str(counter))
+        # maxtime = 10 + random.randint(-3,3)
+        # timeout = maxtime
+        # track = time.time()
+        # elapsed = track - time.time()
+        # timer_incr = 0
+        # print(maxtime)
+        # print(elapsed)
         
 
 if __name__ == "__main__":
