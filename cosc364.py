@@ -5,9 +5,11 @@ import select
 import random
 
 HOST = '127.0.0.1'
+global routerId, outputs
 
 def open_file(fileName):
     "Open the filename"
+    global routerId, outputs
     table = {}
     flag1 = False
     flag2 = False
@@ -34,10 +36,11 @@ def open_file(fileName):
         print("Error in config file")
         return
     acceptedPort,rejectedPort = check_inputPort(inputPort)
-    outputs = check_outputs(outputs,acceptedPort)                    
+    outputs = check_outputs(outputs,acceptedPort)  
+
     # print(routerId)
     # print(acceptedPort)        
-    # print(outputs)
+    print(outputs.keys())
     print("List of rejected ports : {}".format(rejectedPort))
     return (routerId,acceptedPort,outputs)
 
@@ -76,7 +79,7 @@ def check_outputs(outputs,acceptedPort):
             print("Port same as input port")
             return "Port same as input port"
         list = [int(i[0]),int(i[1]),int(i[2])]
-        table[int(i[2])] = [int(i[0]),int(i[1])]
+        table[int(i[2])] = [int(i[0]),int(i[1]), 0, 0]
     return table
 
 def create_socket(acceptedPort):
@@ -102,21 +105,37 @@ def create_socket(acceptedPort):
 #     s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 20) # Change TTL (=20) to suit
 #     # Send the data
 #     s.sendto(data, (addr, port))
-def 
-def main():
+
+def print_Routing_Table():
+    global routerId, outputs
+    print('Routing table for router:', routerId)
+    header = '{:^10}||'.format('Router-ID') + '{:^10}||'.format('PortNum') + '{:^10}||'.format('Metric') + '{:^15}||'.format('Invalid Timer') + '{:^15}||'.format('flush Timer')
+    print(header)
+    for i in outputs.keys():
+        line = '{:^10}||'.format(i) + '{:^10}||'.format(outputs[i][0]) + '{:^10}||'.format(outputs[i][1]) + '{:^15.3f}||'.format(outputs[i][2]) + '{:^15}||'.format(outputs[i][3])
+        print(line)
     
+
+def main():
+    global outputs
     try:
         fileName = sys.argv[1]
     except:
         print("ERROR: 404")
     then = time.time()
+    invalidTime = time.time()
     routerId,acceptedPort,outputs = open_file(fileName)
     createdsocket = create_socket(acceptedPort)
     print(create_socket)
     counter = 1
     while True:
+        
+        if now-then > 5:
         now = time.time() #Time after it finished
         if now-then > 5:
+            for i in outputs.keys():
+                outputs[i][2] = now - invalidTime
+            print_Routing_Table()
             #Some code for updating
             print("It took: ", now-then, " seconds")
             then = now
