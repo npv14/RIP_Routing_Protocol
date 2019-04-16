@@ -118,11 +118,11 @@ def main():
         Timeout = 1.0
         receive, _ , _ = select.select([sock], [], [],Timeout)
         if receive:
-            data, address = sock.recvfbreakrom(1024)
+            data, address = sock.recvfrom(1024)
             if pkt_check(data) is False:
                 sock.close()
                 exit()
-                
+
             print(data[13:].decode('utf-8'))
             sock.close()
             exit()

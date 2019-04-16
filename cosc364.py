@@ -114,8 +114,15 @@ def send_data(portNo):
 def receive(listSock):
     Timeout = 1.0
     receive, _ , _ = select.select(listSock, [], [],Timeout)
+    for sock in receive:
+        data = sock.recvfrom(1024)
+        print(data)
+        data = json.loads(data[0].decode())
+        arr = data.get("a")
+        print(arr)
+
     print("##############################################################")
-    print(receive)
+    # print(receive)
 
 # def send(data, port=50000, addr='239.192.1.100'):
 #     """send(data[, port[, addr]]) - multicasts a UDP datagram."""
