@@ -85,9 +85,9 @@ def create_socket(acceptedPort):
     try: 
         for i in acceptedPort:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sockets.append(s)
             s.bind(("0.0.0.0", i))
-
+            sockets.append(s)
+            # print(sockets)
         return sockets
     except socket.error as err: 
             print("socket creation failed with error %s" %(err))
@@ -102,6 +102,7 @@ def create_socket(acceptedPort):
 #     s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 20) # Change TTL (=20) to suit
 #     # Send the data
 #     s.sendto(data, (addr, port))
+def 
 def main():
     
     try:
@@ -111,14 +112,16 @@ def main():
     then = time.time()
     routerId,acceptedPort,outputs = open_file(fileName)
     createdsocket = create_socket(acceptedPort)
+    print(create_socket)
     counter = 1
     while True:
         now = time.time() #Time after it finished
-        if now-then > 30:
+        if now-then > 5:
             #Some code for updating
             print("It took: ", now-then, " seconds")
             then = now
             continue
+
         
         
         # print("Loop " + str(counter))
