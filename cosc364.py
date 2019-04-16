@@ -3,7 +3,8 @@ import socket
 import sys
 import select
 import random
-import json
+# import json
+import pickle
 
 HOST = '127.0.0.1'
 global routerId, outputs
@@ -100,26 +101,35 @@ def create_message():
     message = []
     version = "2"
     origin = routerId
+    # print('##########################')
+    # print(outputs)
+    # print('##########################')
     message.append(version)
     message.append(origin)
     message.append(outputs)
-    data = json.dumps({"a":message})
+    data = pickle.dumps(message)
     return data
 
 def send_data(portNo):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     data = create_message()
-    s.sendto(data.encode(),(HOST,portNo))
+    s.sendto(data,(HOST,portNo))
 
 def receive(listSock):
     Timeout = 1.0
     receive, _ , _ = select.select(listSock, [], [],Timeout)
+    print("##############################################################")
     for sock in receive:
         data = sock.recvfrom(1024)
         print(data)
-        data = json.loads(data[0].decode())
-        arr = data.get("a")
-        print(arr)
+        data = pickle.loads(data[0])
+        print(data)
+        print("Version: " + data[0])
+        print("Origin router: " + str(data[1]))
+        print("Received routing table")
+        print(data[2])
+        print("Current routing table")
+        print(outputs.update(data[2]))
 
     print("##############################################################")
     # print(receive)
