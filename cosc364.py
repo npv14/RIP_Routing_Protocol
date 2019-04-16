@@ -3,6 +3,7 @@ import socket
 import sys
 import select
 import random
+import json
 
 HOST = '127.0.0.1'
 global routerId, outputs
@@ -95,7 +96,26 @@ def create_socket(acceptedPort):
     except socket.error as err: 
             print("socket creation failed with error %s" %(err))
 
-# def receive():
+def create_message():
+    message = []
+    version = "2"
+    origin = routerId
+    message.append(version)
+    message.append(origin)
+    message.append(outputs)
+    data = json.dumps({"a":message})
+    return data
+
+def send_data(portNo):
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    data = create_message()
+    s.sendto(data.encode(),(HOST,portNo))
+
+def receive(listSock):
+    Timeout = 1.0
+    receive, _ , _ = select.select(listSock, [], [],Timeout)
+    print("##############################################################")
+    print(receive)
 
 # def send(data, port=50000, addr='239.192.1.100'):
 #     """send(data[, port[, addr]]) - multicasts a UDP datagram."""
@@ -126,18 +146,22 @@ def main():
     invalidTime = time.time()
     routerId,acceptedPort,outputs = open_file(fileName)
     createdsocket = create_socket(acceptedPort)
-    print(create_socket)
+    # print(create_socket)
     counter = 1
     while True:
         
-        if now-then > 5:
         now = time.time() #Time after it finished
-        if now-then > 5:
+        
+        if now-then > 4:
+            # create_message()
             for i in outputs.keys():
                 outputs[i][2] = now - invalidTime
             print_Routing_Table()
             #Some code for updating
             print("It took: ", now-then, " seconds")
+            receive(createdsocket)
+            for i in outputs.keys():
+                send_data(outputs[i][0])
             then = now
             continue
 

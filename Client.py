@@ -122,6 +122,7 @@ def main():
             if pkt_check(data) is False:
                 sock.close()
                 exit()
+                
             print(data[13:].decode('utf-8'))
             sock.close()
             exit()
