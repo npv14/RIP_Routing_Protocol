@@ -81,7 +81,7 @@ def check_outputs(outputs,acceptedPort):
             print("Port same as input port")
             return "Port same as input port"
         list = [int(i[0]),int(i[1]),int(i[2])]
-        table[int(i[2])] = [int(i[0]),int(i[1]), 0, 0]
+        table[int(i[2])] = [int(i[0]),int(i[1]), 0, 'True', 0]
     return table
 
 def create_socket(acceptedPort):
@@ -110,27 +110,42 @@ def create_message():
     data = pickle.dumps(message)
     return data
 
-def send_data(portNo):
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+def send_data(portNo, s):
     data = create_message()
     s.sendto(data,(HOST,portNo))
 
+# def updateRoutingTable():
+
+
+
 def receive(listSock):
+    global routerId
     Timeout = 1.0
     receive, _ , _ = select.select(listSock, [], [],Timeout)
     print("##############################################################")
     for sock in receive:
+        # print(sock)
+        # print(sock.getsockname()[1])
         data = sock.recvfrom(1024)
-        print(data)
+        senderPort = data[1][1]
         data = pickle.loads(data[0])
-        print(data)
-        print("Version: " + data[0])
-        print("Origin router: " + str(data[1]))
+        # add = pickle.loads(data[0])
+        # print(data)
+        # print("Version: " + data[0])
+        # print("Origin router: " + str(data[1]))
         print("Received routing table")
+        data[2].pop(routerId)
         print(data[2])
-        print("Current routing table")
-        print(outputs.update(data[2]))
+        cost = min([outputs[x][1] for x in outputs.keys() if outputs[x][0] == senderPort])
+        print('cost :',cost)
 
+        for i in data[2].keys():
+            data[2][i][0] = senderPort
+            if i not in outputs.keys():
+                data[2][i][1] +=  cost
+                outputs[i] =  data[2][i]
+
+        print("Current routing table")
     print("##############################################################")
     # print(receive)
 
@@ -143,15 +158,14 @@ def receive(listSock):
 #     # Send the data
 #     s.sendto(data, (addr, port))
 
-def print_Routing_Table():
-    global routerId, outputs
+def print_Routing_Table(routerId, outputs): 
     print('Routing table for router:', routerId)
-    header = '{:^10}||'.format('Router-ID') + '{:^10}||'.format('PortNum') + '{:^10}||'.format('Metric') + '{:^15}||'.format('Invalid Timer') + '{:^15}||'.format('flush Timer')
+    header = ('{:^10}||'.format('Router-ID') + '{:^10}||'.format('PortNum') + '{:^10}||'.format('Metric') + '{:^15}||'.format('Invalid Timer') +
+    '{:^11}||'.format('Reachable') + '{:^15}||'.format('flush Timer'))
     print(header)
-    for i in outputs.keys():
-        line = '{:^10}||'.format(i) + '{:^10}||'.format(outputs[i][0]) + '{:^10}||'.format(outputs[i][1]) + '{:^15.3f}||'.format(outputs[i][2]) + '{:^15}||'.format(outputs[i][3])
+    for i in sorted(outputs.keys()):
+        line = '{:^10}||'.format(i) + '{:^10}||'.format(outputs[i][0]) + '{:^10}||'.format(outputs[i][1]) + '{:^15.3f}||'.format(outputs[i][2]) + '{:^11}||'.format(outputs[i][3]) +  '{:^15}||'.format(outputs[i][4])
         print(line)
-    
 
 def main():
     global outputs
@@ -166,22 +180,24 @@ def main():
     # print(create_socket)
     counter = 1
     while True:
-        
         now = time.time() #Time after it finished
-        
         if now-then > 4:
             # create_message()
             for i in outputs.keys():
                 outputs[i][2] = now - invalidTime
-            print_Routing_Table()
+            print_Routing_Table(routerId, outputs)
             #Some code for updating
             print("It took: ", now-then, " seconds")
             receive(createdsocket)
+            # print(outputs)
             for i in outputs.keys():
-                send_data(outputs[i][0])
+                for socket in createdsocket:
+                    # print(socket.getsockname()[1]%10)
+                    if (socket.getsockname()[1]%10 == i):
+                        send_data(outputs[i][0], socket)
             then = now
             continue
-
+    
         
         
         # print("Loop " + str(counter))
