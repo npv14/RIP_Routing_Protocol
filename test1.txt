@@ -1,0 +1,3 @@
+router-id 1
+input-ports  1100
+outputs 2001-1-2

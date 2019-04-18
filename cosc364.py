@@ -80,7 +80,6 @@ def check_outputs(outputs,acceptedPort):
         if int(i[0]) in acceptedPort:
             print("Port same as input port")
             return "Port same as input port"
-        list = [int(i[0]),int(i[1]),int(i[2])]
         table[int(i[2])] = [int(i[0]),int(i[1]), 0, 'True', 0]
     return table
 
@@ -110,7 +109,8 @@ def create_message():
     data = pickle.dumps(message)
     return data
 
-def send_data(portNo, s):
+def send_data(portNo):
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    
     data = create_message()
     s.sendto(data,(HOST,portNo))
 
@@ -127,23 +127,29 @@ def receive(listSock):
         # print(sock)
         # print(sock.getsockname()[1])
         data = sock.recvfrom(1024)
-        senderPort = data[1][1]
+        
         data = pickle.loads(data[0])
         # add = pickle.loads(data[0])
         # print(data)
         # print("Version: " + data[0])
-        # print("Origin router: " + str(data[1]))
+        print("Origin router: " + str(data[1]))
         print("Received routing table")
         data[2].pop(routerId)
+        senderPort = outputs[data[1]][0]
         print(data[2])
-        cost = min([outputs[x][1] for x in outputs.keys() if outputs[x][0] == senderPort])
-        print('cost :',cost)
 
+        updateCost = [outputs[x][1] for x in outputs.keys() if x == data[1]].pop()
+
+        print('updateCost :',updateCost)
         for i in data[2].keys():
-            data[2][i][0] = senderPort
+            data[2][i][1] +=  updateCost
             if i not in outputs.keys():
-                data[2][i][1] +=  cost
+                data[2][i][0] = senderPort
                 outputs[i] =  data[2][i]
+            else:
+                if(outputs[i][1] > data[2][i][1]):
+                    outputs[i][0] = senderPort
+                    outputs[i][1] = data[2][i][1]
 
         print("Current routing table")
     print("##############################################################")
@@ -191,10 +197,7 @@ def main():
             receive(createdsocket)
             # print(outputs)
             for i in outputs.keys():
-                for socket in createdsocket:
-                    # print(socket.getsockname()[1]%10)
-                    if (socket.getsockname()[1]%10 == i):
-                        send_data(outputs[i][0], socket)
+                send_data(outputs[i][0])
             then = now
             continue
     
