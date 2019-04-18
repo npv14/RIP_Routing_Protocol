@@ -69,7 +69,8 @@ def check_inputPort(inputPort):
             print("port number is a string")
             rejectedPort.append(i)
     return(acceptedPort,rejectedPort)
-
+global outPort
+outPort = []
 def check_outputs(outputs,acceptedPort):
     "Sanity check for the output"
     table = {}
@@ -81,6 +82,7 @@ def check_outputs(outputs,acceptedPort):
             print("Port same as input port")
             return "Port same as input port"
         table[int(i[2])] = [int(i[0]),int(i[1]), 0, 'True', 0]
+        outPort.append(i[0])
     return table
 
 def create_socket(acceptedPort):
@@ -136,9 +138,25 @@ def receive(listSock):
         print("Received routing table")
         data[2].pop(routerId)
         senderPort = outputs[data[1]][0]
+        
         print(data[2])
 
         updateCost = [outputs[x][1] for x in outputs.keys() if x == data[1]].pop()
+
+        for key in outputs.keys():
+        # print('senderPort:', senderPort)
+            print('outputs[key][0] == senderPort',outputs[key][0] == senderPort)
+            if outputs[key][0] == senderPort:
+                outputs[key][3] = 'True'
+                outputs[key][2] = 0
+
+            if outputs[key][2] > 30:
+                outputs[key][1] = 99999
+                outputs[key][3] = 'False'
+
+                
+
+            # print('outputs[key][2]:', outputs[key][2])
 
         print('updateCost :',updateCost)
         for i in data[2].keys():
@@ -150,6 +168,11 @@ def receive(listSock):
                 if(outputs[i][1] > data[2][i][1]):
                     outputs[i][0] = senderPort
                     outputs[i][1] = data[2][i][1]
+            # if data[2][i][3] == 'False':
+            #     outputs[i][3] = 'False'
+
+       
+
 
         print("Current routing table")
     print("##############################################################")
@@ -174,7 +197,8 @@ def print_Routing_Table(routerId, outputs):
         print(line)
 
 def main():
-    global outputs
+    global outputs, outPort
+    
     try:
         fileName = sys.argv[1]
     except:
@@ -184,20 +208,27 @@ def main():
     routerId,acceptedPort,outputs = open_file(fileName)
     createdsocket = create_socket(acceptedPort)
     # print(create_socket)
+    timeUpdate = time.time()
     counter = 1
     while True:
         now = time.time() #Time after it finished
+
         if now-then > 4:
             # create_message()
+            
+            
             for i in outputs.keys():
-                outputs[i][2] = now - invalidTime
+                outputs[i][2] += now - then
+            receive(createdsocket)
             print_Routing_Table(routerId, outputs)
+            
             #Some code for updating
             print("It took: ", now-then, " seconds")
-            receive(createdsocket)
-            # print(outputs)
-            for i in outputs.keys():
-                send_data(outputs[i][0])
+            
+            print(outPort)
+
+            for i in outPort:
+                send_data(int(i))
             then = now
             continue
     
