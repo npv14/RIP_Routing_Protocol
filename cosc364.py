@@ -144,8 +144,9 @@ def receive(listSock):
         updateCost = [outputs[x][1] for x in outputs.keys() if x == data[1]].pop()
 
         for key in outputs.keys():
-        # print('senderPort:', senderPort)
-            print('outputs[key][0] == senderPort',outputs[key][0] == senderPort)
+            # print('senderPort:', senderPort)
+            # print('outputs[key][0]:', outputs[key][0])
+            # print('outputs[key][0] == senderPort',outputs[key][0] == senderPort)
             if outputs[key][0] == senderPort:
                 outputs[key][3] = 'True'
                 outputs[key][2] = 0
@@ -159,6 +160,7 @@ def receive(listSock):
             # print('outputs[key][2]:', outputs[key][2])
 
         print('updateCost :',updateCost)
+
         for i in data[2].keys():
             data[2][i][1] +=  updateCost
             if i not in outputs.keys():
