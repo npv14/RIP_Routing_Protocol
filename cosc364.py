@@ -142,6 +142,10 @@ def receive(listSock, acceptedPort, original):
             data[2][i][1] +=  updateCost
             if data[2][i][1] > 16:
                 data[2][i][1] = 16
+            
+            if (i in outputs.keys() and data[2][i][3] == 'False' and outputs[i][0] == senderPort):
+                outputs[i][1] = 16
+                outputs[i][3] = 'False'
 
             if i not in outputs.keys():
                 data[2][i][0] = senderPort
@@ -153,14 +157,26 @@ def receive(listSock, acceptedPort, original):
                         outputs[i][0] = senderPort
                         outputs[i][1] = data[2][i][1]   
 
+            # if data[2][i][1] == 16:
+                
+
+
         print("data[2]:", data[2])
         print("Outputs:", outputs)
 
         for key in outputs.keys():
-            if outputs[key][0] == senderPort:
+            if key == data[1]:
                 outputs[key][3] = 'True'
                 outputs[key][2] = 0
-                if (key in original.keys() and outputs[key][1] > original[key][1]):
+                outputs[key][1] = original[key][1]
+
+            if outputs[key][0] == senderPort and key != data[1]:
+                outputs[key][3] = 'True'
+                outputs[key][2] = 0
+                # print('key', key)
+                # print('data[2][key][1]', data[2][key][1])
+                outputs[key][1] = data[2][key][1]
+                if (key in original.keys() and outputs[key][1] > original[key][1] and (senderPort == original[key][0]  or outputs[key][0] == original[key][0])):
                     outputs[key][1] = original[key][1]
 
             # if outputs[key][2] > 30:
@@ -217,12 +233,16 @@ def main():
 
             for i in outputs.keys():
                 outputs[i][2] += now - then
+                
 
             recieved = receive(createdsocket, acceptedPort, original)
-
+            
             for key in outputs.keys():
                 if outputs[key][2] > 30:
                     outputs[key][1] = 16
+
+                if outputs[key][2] > 40:
+                    outputs[key][3] = 'False'
 
             if recieved:
                 print_Routing_Table(routerId, outputs)
