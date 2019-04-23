@@ -5,7 +5,7 @@ import select
 import random
 # import json
 import pickle
-
+import copy
 HOST = '127.0.0.1'
 global routerId, outputs
 
@@ -42,7 +42,7 @@ def open_file(fileName):
 
     # print(routerId)
     # print(acceptedPort)        
-    print(outputs.keys())
+    # print(outputs.keys())
     print("List of rejected ports : {}".format(rejectedPort))
     return (routerId,acceptedPort,outputs)
 
@@ -69,8 +69,10 @@ def check_inputPort(inputPort):
             print("port number is a string")
             rejectedPort.append(i)
     return(acceptedPort,rejectedPort)
+
 global outPort
 outPort = []
+
 def check_outputs(outputs,acceptedPort):
     "Sanity check for the output"
     table = {}
@@ -98,87 +100,76 @@ def create_socket(acceptedPort):
     except socket.error as err: 
             print("socket creation failed with error %s" %(err))
 
-def create_message():
+def create_message(outputs):
     message = []
     version = "2"
     origin = routerId
-    # print('##########################')
-    # print(outputs)
-    # print('##########################')
     message.append(version)
     message.append(origin)
     message.append(outputs)
     data = pickle.dumps(message)
     return data
 
-def send_data(portNo):
+def send_data(portNo, outputs):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    
-    data = create_message()
+    data = create_message(outputs)
     s.sendto(data,(HOST,portNo))
 
-# def updateRoutingTable():
-
-
-
-def receive(listSock):
-    global routerId
+def receive(listSock, acceptedPort, original):
+    global routerId, outputs
+    # outputs = copy.deepcopy(original)
     Timeout = 1.0
     receive, _ , _ = select.select(listSock, [], [],Timeout)
     print("##############################################################")
+    changed = False
+
     for sock in receive:
-        # print(sock)
-        # print(sock.getsockname()[1])
-        data = sock.recvfrom(1024)
-        
+        changed = True
+        data = sock.recvfrom(1024)  
         data = pickle.loads(data[0])
-        # add = pickle.loads(data[0])
-        # print(data)
-        # print("Version: " + data[0])
-        print("Origin router: " + str(data[1]))
-        print("Received routing table")
         data[2].pop(routerId)
         senderPort = outputs[data[1]][0]
+        updateCost = [original[x][1] for x in original.keys() if x == data[1]].pop()
         
-        print(data[2])
-
-        updateCost = [outputs[x][1] for x in outputs.keys() if x == data[1]].pop()
-
-        for key in outputs.keys():
-            # print('senderPort:', senderPort)
-            # print('outputs[key][0]:', outputs[key][0])
-            # print('outputs[key][0] == senderPort',outputs[key][0] == senderPort)
-            if outputs[key][0] == senderPort:
-                outputs[key][3] = 'True'
-                outputs[key][2] = 0
-
-            if outputs[key][2] > 30:
-                outputs[key][1] = 99999
-                outputs[key][3] = 'False'
-
-                
-
-            # print('outputs[key][2]:', outputs[key][2])
-
-        print('updateCost :',updateCost)
-
+        print("Origin router: " + str(data[1]))
+        print("Received routing table")
+        print("senderPort:", senderPort)
+        print("updateCost:", updateCost)
+        
+        # print("senderPort:", senderPort)
         for i in data[2].keys():
+
             data[2][i][1] +=  updateCost
+            if data[2][i][1] > 16:
+                data[2][i][1] = 16
+
             if i not in outputs.keys():
                 data[2][i][0] = senderPort
                 outputs[i] =  data[2][i]
             else:
                 if(outputs[i][1] > data[2][i][1]):
-                    outputs[i][0] = senderPort
-                    outputs[i][1] = data[2][i][1]
-            # if data[2][i][3] == 'False':
-            #     outputs[i][3] = 'False'
+                    print('outputs[i][0] == senderPort) or (data[2][i][0] not in acceptedPort', (outputs[i][0] == senderPort) or (data[2][i][0] not in acceptedPort))
+                    if (outputs[i][0] == senderPort) or (data[2][i][0] not in acceptedPort):
+                        outputs[i][0] = senderPort
+                        outputs[i][1] = data[2][i][1]   
 
-       
+        print("data[2]:", data[2])
+        print("Outputs:", outputs)
 
+        for key in outputs.keys():
+            if outputs[key][0] == senderPort:
+                outputs[key][3] = 'True'
+                outputs[key][2] = 0
+                if (key in original.keys() and outputs[key][1] > original[key][1]):
+                    outputs[key][1] = original[key][1]
 
-        print("Current routing table")
+            # if outputs[key][2] > 30:
+            #     outputs[key][1] = 16
+                # outputs[key][3] = 'False'
+        print('updateCost :',updateCost) 
     print("##############################################################")
-    # print(receive)
+    return changed, outputs
+
 
 # def send(data, port=50000, addr='239.192.1.100'):
 #     """send(data[, port[, addr]]) - multicasts a UDP datagram."""
@@ -200,40 +191,69 @@ def print_Routing_Table(routerId, outputs):
 
 def main():
     global outputs, outPort
-    
     try:
         fileName = sys.argv[1]
     except:
         print("ERROR: 404")
+
     then = time.time()
     invalidTime = time.time()
     routerId,acceptedPort,outputs = open_file(fileName)
-    createdsocket = create_socket(acceptedPort)
+    original = copy.deepcopy(outputs)
+    print('acceptedPort:', acceptedPort)
+
+    # Create sockets
+    createdsocket = create_socket(acceptedPort) 
     # print(create_socket)
+
     timeUpdate = time.time()
     counter = 1
     while True:
         now = time.time() #Time after it finished
-
+        
         if now-then > 4:
-            # create_message()
-            
-            
+            print('outputs:', outputs)
+            print('original:', original)
+
             for i in outputs.keys():
                 outputs[i][2] += now - then
-            receive(createdsocket)
-            print_Routing_Table(routerId, outputs)
-            
-            #Some code for updating
-            print("It took: ", now-then, " seconds")
-            
-            print(outPort)
+
+            recieved = receive(createdsocket, acceptedPort, original)
+
+            for key in outputs.keys():
+                if outputs[key][2] > 30:
+                    outputs[key][1] = 16
+
+            if recieved:
+                print_Routing_Table(routerId, outputs)
 
             for i in outPort:
-                send_data(int(i))
+                send_data(int(i), outputs)
+
             then = now
             continue
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         
         
         # print("Loop " + str(counter))
