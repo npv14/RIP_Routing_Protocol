@@ -128,7 +128,7 @@ def receive(listSock, acceptedPort, original):
         data = sock.recvfrom(1024)  
         data = pickle.loads(data[0])
         data[2].pop(routerId)
-        senderPort = outputs[data[1]][0]
+        senderPort = original[data[1]][0]
         updateCost = [original[x][1] for x in original.keys() if x == data[1]].pop()
         
         print("Origin router: " + str(data[1]))
@@ -150,6 +150,7 @@ def receive(listSock, acceptedPort, original):
             if i not in outputs.keys():
                 data[2][i][0] = senderPort
                 outputs[i] =  data[2][i]
+
             else:
                 if(outputs[i][1] > data[2][i][1]):
                     print('outputs[i][0] == senderPort) or (data[2][i][0] not in acceptedPort', (outputs[i][0] == senderPort) or (data[2][i][0] not in acceptedPort))
@@ -170,18 +171,33 @@ def receive(listSock, acceptedPort, original):
                 outputs[key][2] = 0
                 outputs[key][1] = original[key][1]
 
+
             if outputs[key][0] == senderPort and key != data[1]:
                 outputs[key][3] = 'True'
                 outputs[key][2] = 0
                 # print('key', key)
                 # print('data[2][key][1]', data[2][key][1])
                 outputs[key][1] = data[2][key][1]
-                if (key in original.keys() and outputs[key][1] > original[key][1] and (senderPort == original[key][0]  or outputs[key][0] == original[key][0])):
-                    outputs[key][1] = original[key][1]
+
+                # if (key in original.keys() and outputs[key][1] > original[key][1] and (senderPort == original[key][0]  or outputs[key][0] == original[key][0])):
+                #     outputs[key][1] = original[key][1]
 
             # if outputs[key][2] > 30:
             #     outputs[key][1] = 16
                 # outputs[key][3] = 'False'
+        
+        print('data[1]', data[1])
+        print('original.keys()', original.keys())
+        print('data[1] in original.keys()', data[1] in original.keys())
+
+        if data[1] in original.keys():
+            print('original[data[1]][1]', original[data[1]][1])
+            print('outputs[data[1]][1]', outputs[data[1]][1])
+            print('original[data[1]][1] < outputs[data[1]][1]', original[data[1]][1] < outputs[data[1]][1])
+            if original[data[1]][1] < outputs[data[1]][1]:
+                outputs[data[1]][0] = original[data[1]][0]
+                outputs[data[1]][1] = original[data[1]][1]
+
         print('updateCost :',updateCost) 
     print("##############################################################")
     return changed, outputs
