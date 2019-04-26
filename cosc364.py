@@ -139,6 +139,19 @@ def receive(listSock, acceptedPort, original):
         # print("senderPort:", senderPort)
         for i in data[2].keys():
 
+            print('data[1]', data[1])
+            print('original.keys()', original.keys())
+            print('data[1] in original.keys()', data[1] in original.keys())
+
+            if data[1] in original.keys():
+                print('original[data[1]][1]', original[data[1]][1])
+                print('outputs[data[1]][1]', outputs[data[1]][1])
+                print('original[data[1]][1] < outputs[data[1]][1]', original[data[1]][1] < outputs[data[1]][1])
+                if original[data[1]][1] < outputs[data[1]][1]:
+                    outputs[data[1]][0] = original[data[1]][0]
+                    outputs[data[1]][1] = original[data[1]][1]
+                    
+
             data[2][i][1] +=  updateCost
             if data[2][i][1] > 16:
                 data[2][i][1] = 16
@@ -186,17 +199,9 @@ def receive(listSock, acceptedPort, original):
             #     outputs[key][1] = 16
                 # outputs[key][3] = 'False'
         
-        print('data[1]', data[1])
-        print('original.keys()', original.keys())
-        print('data[1] in original.keys()', data[1] in original.keys())
-
-        if data[1] in original.keys():
-            print('original[data[1]][1]', original[data[1]][1])
-            print('outputs[data[1]][1]', outputs[data[1]][1])
-            print('original[data[1]][1] < outputs[data[1]][1]', original[data[1]][1] < outputs[data[1]][1])
-            if original[data[1]][1] < outputs[data[1]][1]:
-                outputs[data[1]][0] = original[data[1]][0]
-                outputs[data[1]][1] = original[data[1]][1]
+        
+                
+                
 
         print('updateCost :',updateCost) 
     print("##############################################################")
@@ -244,8 +249,7 @@ def main():
         now = time.time() #Time after it finished
         
         if now-then > 4:
-            print('outputs:', outputs)
-            print('original:', original)
+            
 
             for i in outputs.keys():
                 outputs[i][2] += now - then
@@ -261,7 +265,10 @@ def main():
                     outputs[key][3] = 'False'
 
             if recieved:
+                print('outputs:', outputs)
+                print('original:', original)
                 print_Routing_Table(routerId, outputs)
+
 
             for i in outPort:
                 send_data(int(i), outputs)
