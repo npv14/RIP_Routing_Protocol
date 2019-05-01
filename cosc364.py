@@ -127,7 +127,8 @@ def receive(listSock, acceptedPort, original):
         changed = True
         data = sock.recvfrom(1024)  
         data = pickle.loads(data[0])
-        data[2].pop(routerId)
+        if routerId in data[2].keys():
+            data[2].pop(routerId)
         senderPort = original[data[1]][0]
         updateCost = [original[x][1] for x in original.keys() if x == data[1]].pop()
         
@@ -139,19 +140,21 @@ def receive(listSock, acceptedPort, original):
         # print("senderPort:", senderPort)
         for i in data[2].keys():
 
-            print('data[1]', data[1])
-            print('original.keys()', original.keys())
-            print('data[1] in original.keys()', data[1] in original.keys())
+            # print('data[1]', data[1])
+            # print('original.keys()', original.keys())
+            # print('data[1] in original.keys()', data[1] in original.keys())
 
             if data[1] in original.keys():
-                print('original[data[1]][1]', original[data[1]][1])
-                print('outputs[data[1]][1]', outputs[data[1]][1])
-                print('original[data[1]][1] < outputs[data[1]][1]', original[data[1]][1] < outputs[data[1]][1])
-                if original[data[1]][1] < outputs[data[1]][1]:
-                    outputs[data[1]][0] = original[data[1]][0]
-                    outputs[data[1]][1] = original[data[1]][1]
+                # print('original[data[1]][1]', original[data[1]][1])
+                # print('outputs[data[1]][1]', outputs[data[1]][1])
+                # print('original[data[1]][1] < outputs[data[1]][1]', original[data[1]][1] < outputs[data[1]][1])
+                if data[1] in outputs.keys():
+                    if original[data[1]][1] < outputs[data[1]][1]:
+                        outputs[data[1]][0] = original[data[1]][0]
+                        outputs[data[1]][1] = original[data[1]][1]
+                else:
+                    outputs[data[1]] =  original[data[1]]
                     
-
             data[2][i][1] +=  updateCost
             if data[2][i][1] > 16:
                 data[2][i][1] = 16
@@ -160,7 +163,7 @@ def receive(listSock, acceptedPort, original):
                 outputs[i][1] = 16
                 outputs[i][3] = 'False'
 
-            if i not in outputs.keys():
+            if i not in outputs.keys() and data[2][i][2] < 16:
                 data[2][i][0] = senderPort
                 outputs[i] =  data[2][i]
 
@@ -184,13 +187,13 @@ def receive(listSock, acceptedPort, original):
                 outputs[key][2] = 0
                 outputs[key][1] = original[key][1]
 
-
-            if outputs[key][0] == senderPort and key != data[1]:
-                outputs[key][3] = 'True'
-                outputs[key][2] = 0
-                # print('key', key)
-                # print('data[2][key][1]', data[2][key][1])
-                outputs[key][1] = data[2][key][1]
+            if key in data[2].keys():
+                if outputs[key][0] == senderPort and key != data[1]:
+                    outputs[key][3] = 'True'
+                    outputs[key][2] = 0
+                    # print('key', key)
+                    # print('data[2][key][1]', data[2][key][1])
+                    outputs[key][1] = data[2][key][1]
 
                 # if (key in original.keys() and outputs[key][1] > original[key][1] and (senderPort == original[key][0]  or outputs[key][0] == original[key][0])):
                 #     outputs[key][1] = original[key][1]
@@ -220,10 +223,10 @@ def receive(listSock, acceptedPort, original):
 def print_Routing_Table(routerId, outputs): 
     print('Routing table for router:', routerId)
     header = ('{:^10}||'.format('Router-ID') + '{:^10}||'.format('PortNum') + '{:^10}||'.format('Metric') + '{:^15}||'.format('Invalid Timer') +
-    '{:^11}||'.format('Reachable') + '{:^15}||'.format('flush Timer'))
+    '{:^11}||'.format('Reachable') + '{:^15}||'.format('Garbage Timer'))
     print(header)
     for i in sorted(outputs.keys()):
-        line = '{:^10}||'.format(i) + '{:^10}||'.format(outputs[i][0]) + '{:^10}||'.format(outputs[i][1]) + '{:^15.3f}||'.format(outputs[i][2]) + '{:^11}||'.format(outputs[i][3]) +  '{:^15}||'.format(outputs[i][4])
+        line = '{:^10}||'.format(i) + '{:^10}||'.format(outputs[i][0]) + '{:^10}||'.format(outputs[i][1]) + '{:^15.3f}||'.format(outputs[i][2]) + '{:^11}||'.format(outputs[i][3]) +  '{:^15.3f}||'.format(outputs[i][4])
         print(line)
 
 def main():
@@ -232,7 +235,6 @@ def main():
         fileName = sys.argv[1]
     except:
         print("ERROR: 404")
-
     then = time.time()
     invalidTime = time.time()
     routerId,acceptedPort,outputs = open_file(fileName)
@@ -247,13 +249,19 @@ def main():
     counter = 1
     while True:
         now = time.time() #Time after it finished
-        
+        list_garbage = [] 
         if now-then > 4:
             
-
             for i in outputs.keys():
                 outputs[i][2] += now - then
+                if outputs[i][3] == 'False':
+                    outputs[i][4] += now - then
                 
+                if outputs[i][4] > 15:
+                    list_garbage.append(i)
+
+            
+            
 
             recieved = receive(createdsocket, acceptedPort, original)
             
@@ -264,9 +272,20 @@ def main():
                 if outputs[key][2] > 40:
                     outputs[key][3] = 'False'
 
+                if outputs[key][1] >= 16:
+                    outputs[key][3] = 'False'
+
+                
+                # if outputs[key][3] == 'True':
+                #     outputs[i][4] = 0
+
+
             if recieved:
                 print('outputs:', outputs)
                 print('original:', original)
+                for key in list_garbage:
+                    if key in outputs.keys():
+                        outputs.pop(key)
                 print_Routing_Table(routerId, outputs)
 
 
@@ -275,38 +294,7 @@ def main():
 
             then = now
             continue
-    
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-        
-        # print("Loop " + str(counter))
-        # maxtime = 10 + random.randint(-3,3)
-        # timeout = maxtime
-        # track = time.time()
-        # elapsed = track - time.time()
-        # timer_incr = 0
-        # print(maxtime)
-        # print(elapsed)
         
 
 if __name__ == "__main__":
