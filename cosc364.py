@@ -115,9 +115,9 @@ def send_data(portNo, outputs):
     data = create_message(outputs)
     s.sendto(data,(HOST,portNo))
 
-def receive(listSock, acceptedPort, original):
+def receive(listSock, acceptedPort, Realoriginal):
     global routerId, outputs
-    # outputs = copy.deepcopy(original)
+    original = copy.deepcopy(Realoriginal)
     Timeout = 1.0
     receive, _ , _ = select.select(listSock, [], [],Timeout)
     print("##############################################################")
@@ -136,38 +136,45 @@ def receive(listSock, acceptedPort, original):
         print("Received routing table")
         print("senderPort:", senderPort)
         print("updateCost:", updateCost)
+        print("original:", original)
         
         # print("senderPort:", senderPort)
+        if data[1] in original.keys():
+            
+            if data[1] in outputs.keys():
+                print('original[data[1]][1]', original[data[1]][1])
+                print('outputs[data[1]][1]', outputs[data[1]][1])
+                print('original[data[1]][1] < outputs[data[1]][1]', original[data[1]][1] < outputs[data[1]][1])
+                if original[data[1]][1] < outputs[data[1]][1]:
+                    outputs[data[1]][0] = original[data[1]][0]
+                    outputs[data[1]][1] = original[data[1]][1]
+            else:
+                outputs[data[1]] =  original[data[1]]
+
         for i in data[2].keys():
 
             # print('data[1]', data[1])
             # print('original.keys()', original.keys())
             # print('data[1] in original.keys()', data[1] in original.keys())
 
-            if data[1] in original.keys():
-                # print('original[data[1]][1]', original[data[1]][1])
-                # print('outputs[data[1]][1]', outputs[data[1]][1])
-                # print('original[data[1]][1] < outputs[data[1]][1]', original[data[1]][1] < outputs[data[1]][1])
-                if data[1] in outputs.keys():
-                    if original[data[1]][1] < outputs[data[1]][1]:
-                        outputs[data[1]][0] = original[data[1]][0]
-                        outputs[data[1]][1] = original[data[1]][1]
-                else:
-                    outputs[data[1]] =  original[data[1]]
+           
                     
             data[2][i][1] +=  updateCost
             if data[2][i][1] > 16:
                 data[2][i][1] = 16
-            
+            # print('i :', i)
+            # print('i in outputs.keys()', i in outputs.keys())
+            # print('data[2][i][3]', data[2][i][3])
+            # print('data[2][i][3]', data[2][i][3])
             if (i in outputs.keys() and data[2][i][3] == 'False' and outputs[i][0] == senderPort):
                 outputs[i][1] = 16
                 outputs[i][3] = 'False'
 
-            if i not in outputs.keys() and data[2][i][2] < 16:
+            if i not in outputs.keys() and data[2][i][1] < 16 and data[2][i][3] != 'False':
                 data[2][i][0] = senderPort
                 outputs[i] =  data[2][i]
 
-            else:
+            if i in outputs.keys():
                 if(outputs[i][1] > data[2][i][1]):
                     print('outputs[i][0] == senderPort) or (data[2][i][0] not in acceptedPort', (outputs[i][0] == senderPort) or (data[2][i][0] not in acceptedPort))
                     if (outputs[i][0] == senderPort) or (data[2][i][0] not in acceptedPort):
@@ -256,7 +263,10 @@ def main():
                 outputs[i][2] += now - then
                 if outputs[i][3] == 'False':
                     outputs[i][4] += now - then
-                
+
+                if outputs[i][3] == 'True':
+                    outputs[i][4] = 0
+
                 if outputs[i][4] > 15:
                     list_garbage.append(i)
 
