@@ -1,9 +1,3 @@
-
-"Name: Nam Vu"
-"Student ID: "
-"Name: Muhammad Asyrawi Abdullah Zawawi"
-"Student ID: 85112325"
-
 import time
 import socket
 import sys
