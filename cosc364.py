@@ -15,6 +15,7 @@ HOST = '127.0.0.1'
 global routerId, currentTable, outPort
 outPort = []
 
+
 def open_file(fileName):
     "Open the filename"
     global routerId, currentTable
@@ -171,18 +172,23 @@ def receive(listSock, acceptedPort, Realoriginal):
                     currentTable[key][1] = data[2][key][1]
     return changed, currentTable
 
-def print_Routing_Table(routerId, currentTable):
+def print_Routing_Table(routerId, currentTable, original):
     "This function prints out the routing table" 
+    # print(original)
+    hopDic = {}
+    for i in sorted(original.keys()):
+        hopDic[original[i][0]] = i
     print('Routing table for router:', routerId)
-    header = ('{:^10}||'.format('Router-ID') + '{:^10}||'.format('PortNum') + '{:^10}||'.format('Metric') + '{:^15}||'.format('Invalid Timer') +
+    header = ('{:^10}||'.format('Des-ID') + '{:^10}||'.format('Nexthop') + '{:^10}||'.format('Metric') + '{:^15}||'.format('Invalid Timer') +
     '{:^11}||'.format('Reachable') + '{:^15}||'.format('Garbage Timer'))
     print(header)
     for i in sorted(currentTable.keys()):
-        line = '{:^10}||'.format(i) + '{:^10}||'.format(currentTable[i][0]) + '{:^10}||'.format(currentTable[i][1]) + '{:^15.3f}||'.format(currentTable[i][2]) + '{:^11}||'.format(currentTable[i][3]) +  '{:^15.3f}||'.format(currentTable[i][4])
+        line = '{:^10}||'.format(i) + '{:^10}||'.format(hopDic[currentTable[i][0]]) + '{:^10}||'.format(currentTable[i][1]) + '{:^15.3f}||'.format(currentTable[i][2]) + '{:^11}||'.format(currentTable[i][3]) +  '{:^15.3f}||'.format(currentTable[i][4])
         print(line)
     print("\n")
     print("\n")
     print("\n")
+
 
 def main():
     "Main function"
@@ -202,34 +208,35 @@ def main():
     while True:
         now = time.time() #Time after it finished
         list_garbage = [] 
-        if now-then > 1:
-            for i in currentTable.keys():
-                currentTable[i][2] += now - then
-                if currentTable[i][3] == 'False':
-                    currentTable[i][4] += now - then
-                if currentTable[i][3] == 'True':
-                    currentTable[i][4] = 0
-                if currentTable[i][4] > 15:
-                    list_garbage.append(i)
-            recieved = receive(createdsocket, acceptedPort, original)
-            #
-            for key in currentTable.keys():
-                if currentTable[key][2] > 30:
-                    currentTable[key][1] = 16
-                if currentTable[key][2] > 40:
-                    currentTable[key][3] = 'False'
-                if currentTable[key][1] >= 16:
-                    currentTable[key][3] = 'False'
-            if recieved:
-                #Delete rows of inactive routers
-                for key in list_garbage:
-                    if key in currentTable.keys():
-                        currentTable.pop(key)
-                print_Routing_Table(routerId, currentTable)
-            for i in outPort:
-                send_data(int(i), currentTable)
-            then = now
-            continue
+        for i in currentTable.keys():
+            currentTable[i][2] += now - then
+            if currentTable[i][3] == 'False':
+                currentTable[i][4] += now - then
+            if currentTable[i][3] == 'True':
+                currentTable[i][4] = 0
+            if currentTable[i][4] > 15:
+                list_garbage.append(i)
+        recieved = receive(createdsocket, acceptedPort, original)
+        #
+        for key in currentTable.keys():
+            if currentTable[key][2] > 30:
+                currentTable[key][1] = 16
+            if currentTable[key][2] > 40:
+                currentTable[key][3] = 'False'
+            if currentTable[key][1] >= 16:
+                currentTable[key][3] = 'False'
+        if recieved:
+            #Delete rows of inactive routers
+            for key in list_garbage:
+                if key in currentTable.keys():
+                    currentTable.pop(key)
+            print_Routing_Table(routerId, currentTable, original)
+        for i in outPort:
+            send_data(int(i), currentTable)
+        
+        time.sleep(1)
+        then = now
+        continue
 
 if __name__ == "__main__":
     main()  
