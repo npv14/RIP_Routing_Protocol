@@ -1,6 +1,6 @@
 
 "Name: Nam Vu"
-"Student ID: "
+"Student ID: 54781288"
 "Name: Muhammad Asyrawi Abdullah Zawawi"
 "Student ID: 85112325"
 
@@ -204,7 +204,6 @@ def main():
     # Create sockets
     createdsocket = create_socket(acceptedPort) 
     timeUpdate = time.time()
-    counter = 1
     while True:
         now = time.time() #Time after it finished
         list_garbage = [] 
